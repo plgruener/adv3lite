@@ -1008,7 +1008,8 @@ enum OtherObject;
  *   anyway by each translated library version, so there's no point in
  *   including their text in the final compiled program.  
  */
-#if STRINGIZE(LANGUAGE) == 'english'
+//allow to compile games with german language-settings
+#if STRINGIZE(LANGUAGE) == 'english' || STRINGIZE(LANGUAGE) == 'german'	//FIXME
 #define DMsg(id, txt, args...)  message(#@id, txt, ##args)
 #define BMsg(id, txt, args...)  buildMessage(#@id, txt, ##args)
 #else
