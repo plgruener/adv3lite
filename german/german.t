@@ -1,4 +1,4 @@
-#charset "us-ascii"
+#charset "utf-8"
 #include "advlite.h"
 
 /*
@@ -15,17 +15,21 @@
  *   Methods and properties that are part of the generic interface are
  *   identified with [Required].  
  */
+//GERMAN translation of adv3lite (by Eric Eve),
+// based on GTADS (german translation of the original TADS 3) by Michael Baltes
+//@author plg94
 
 /* ------------------------------------------------------------------------ */
 /*
- *   English module options. 
+ *   German module options. 
  */
-englishOptions: object
+//GERMAN switch these two
+germanOptions: object
     /* decimal point character */
-    decimalPt = '.'
+    decimalPt = ','
 
     /* group separator in large numbers */
-    numGroupMark = ','
+    numGroupMark = '.'
 ;
 
 
@@ -624,10 +628,10 @@ class LMentionable: object
                 massNoun = true;
                 break;
                 
-            case '()':            
+            case '()':
                 /* mark this as a qualified name */
                 qualified = true;
-                break;               
+                break;
             
             case 'the':
                 qualified = true;
@@ -2170,7 +2174,6 @@ modify Thing
 ;
 
 
-
 /*-------------------------------------------------------------------------- */
 /*  
  *   English language modifications to Room. Here we simply allow a Room to take
@@ -2794,8 +2797,8 @@ englishCustomVocab: CustomVocab
 spellNumber(n)
 {
     /* get the number formatting options */
-    local dot = englishOptions.decimalPt;
-    local comma = englishOptions.numGroupMark;
+    local dot = germanOptions.decimalPt;
+    local comma = germanOptions.numGroupMark;
     
     /* if it's a BigNumber with a fractional part, write as digits */
     if (dataType(n) == TypeObject
@@ -4476,12 +4479,19 @@ englishMessageParams: MessageParams
 
         /* {must <verb>} - the second token is a verb infinitive */
         [ 'must', { ctx, params: conjugateMust(ctx, params) } ],
-        
-        [ 'actionliststr', {ctx, params: gActionListStr } ],
 
+		[ 'actionliststr', {ctx, params: gActionListStr } ],
+
+		//GERMAN insertion for participleEndings
+		[ '*', 	dummyVerb ],
+		[ '-*',	dummyPartWithoutBlank ],
+		[ '!*',	dummyPart ],
+		[ '+*',	setPartLong],
+		[ '**',	printPartLong],
+		[ 'interrobang', {ctx, params: '‽'}],
+		
         /* conj <verb> <type> congugate a regular verb */
         ['conj', {ctx, params: conjugateRegular(ctx, params) } ]
-
     ]
 
     /*
@@ -4565,7 +4575,7 @@ englishMessageParams: MessageParams
 
     /* verb table - we build this at preinit from the verb parameters */
     verbTab = nil
-    
+
     /* 
      *   Word-ending letter combinations that are awkward to follow with a
      *   contracted verb such a 've.
@@ -4580,9 +4590,54 @@ englishMessageParams: MessageParams
     {
         return sLetters.indexWhich({lts: nam.endsWith(lts)})!= nil;
     }
-
-    
 ;
+
+//GERMAN for correct placing of verb-participles; also see de_de.t[13781]
+verbHelper : object
+    reversed = nil
+    blank = true
+    participle = ''
+    longParticiple = ''
+    lastVerb = 'undefined'
+    setParticiple(txt) {
+        participle = txt;
+    }
+;
+
+dummyVerb(ctx, params){
+	verbHelper.reversed = nil;
+
+	if (verbHelper.participle == '')
+        return '';
+    else if (verbHelper.blank)
+        return ' ' + verbHelper.participle;
+    else {
+        verbHelper.blank = true;
+        return verbHelper.participle;
+    }
+}
+
+setPartLong(ctx, params) {
+    verbHelper.longParticiple = verbHelper.participle;
+    return '';
+}
+    
+printPartLong(ctx, params)
+{
+    return ' ' + verbHelper.longParticiple;
+}
+
+dummyPart(ctx, params)
+{
+    verbHelper.reversed = true;
+    return '';
+}
+
+dummyPartWithoutBlank(ctx, params)
+{
+    verbHelper.blank = nil;
+    return dummyVerb;
+}
 
 /* 
  *   Regular verb conjugator.  This takes the list of CustomVocab
@@ -4601,7 +4656,7 @@ conjugate(ctx, params)
      *   slot, all other forms have the first slot 
      */
     local idx = ctx.subj.plural || ctx.subj.person != 3 ? 1 : 2;
-    
+	
     switch (Narrator.tense)
     {
     case Present:
@@ -4677,14 +4732,14 @@ conjugateRegular(ctx, params)
     local thirdPresentEnding = '';
     local participleEnding = '';
     local root = params[2];
-    
+
     switch(params[3])
     {
     case 's/d':
         thirdPresentEnding = 's';
         participleEnding = 'd';
         break;
-        
+
     case 's/ed':      
         thirdPresentEnding = 's';
         participleEnding = 'ed';
@@ -4776,7 +4831,6 @@ pastParticiple(verb)
         return englishMessageParams.verbTab[verb][4];
     
 }
-
 
 /*
  *   Conjugate "to be".  This is a handler function for message parameter
@@ -5023,7 +5077,7 @@ conjugateWasnot(ctx, params)
     return nil;
 }
 
-/* 
+/*
  *   Conjugate 've (contraction of have). After some words it's better not to
  *   contract (e.g. Liz's or Jesus'd is a a bit awkward) so we use the full
  *   'have' or 'had' form for such subjects and the contracted form otherwise.
